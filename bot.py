@@ -1,7 +1,7 @@
 import telebot
 from telebot.storage import StateMemoryStorage
 
-from splitbill.model.groupExpenses import Expenses, Item
+from groupExpenses import Expenses, Item
 
 #ilovke bot
 TELEBOT_TOKEN = "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"

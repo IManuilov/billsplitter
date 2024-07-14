@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 
 
@@ -13,10 +14,10 @@ class Item:
         return f"{self.amount:9} | {self.user[:7]:7} | {self.description[:10]:10} | {self.date:5}"
 
 class Expenses:
-    def __init__(self):
-        self.chatid = ''
-        self.items = []
-        self.users = []
+    def __init__(self, chatid, items=[], users=[]):
+        self.chatid = chatid
+        self.items = [Item(**it) for it in items]
+        self.users = users
 
 
     def addItem(self, item):
@@ -49,6 +50,13 @@ class Expenses:
 
     def clear(self):
         self.items = []
+
+    def toJSON(self):
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__,
+            sort_keys=True,
+            indent=4)
 
 # exp = Expenses()
 # exp.addItem(Item('', 100, 'Kesha', 'морковь'))
