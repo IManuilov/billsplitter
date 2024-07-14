@@ -1,9 +1,17 @@
 import json
 from collections import defaultdict
 
+from datetime import datetime
+
+
+def nowstr():
+    nw = datetime.now()
+    date_time = nw.strftime("%m/%d")
+    return date_time
 
 class Item:
-    def __init__(self, date, amount, user, description):
+
+    def __init__(self, amount, user, description, date=nowstr()):
         self.date = date
         self.amount = amount
         self.user = user
@@ -11,7 +19,11 @@ class Item:
         #
 
     def __str__(self):
-        return f"{self.amount:9} | {self.user[:7]:7} | {self.description[:10]:10} | {self.date:5}"
+        return f"{self.amount:9} | {self.user[:7]:7} | {self.description[:10]:11} | {self.date:5}"
+
+    @staticmethod
+    def head():
+        return f"{'amount':9} | {'user':7} | {'description':11} | {'date':5}\n"
 
 class Expenses:
     def __init__(self, chatid, items=[], users=[]):
@@ -26,8 +38,11 @@ class Expenses:
     def addUser(self, user):
         self.users.append(user)
 
+    def userSet(self):
+        return set([it.user for it in self.items])
+
     def printAll(self):
-        table = (self.chatid + " Все расходы :\n" +
+        table = (Item.head() +
                  '\n'.join([str(it) for it in self.items]))
         print(table)
         return table
@@ -39,6 +54,8 @@ class Expenses:
         for u, l in res.items():
             u2a[u] = sum(l)
 
+        if len(u2a) == 0:
+            return
 
         fullsum = sum(u2a.values())
         expsum = fullsum / len(u2a)

@@ -19,14 +19,18 @@ def loadExpenses(chatid):
     mycursor.execute("SELECT * FROM exp2 where chatid = %s", vals)
     it = mycursor.fetchone()
     if it:
-        print(it[0])
-        print(it[1])
-        obj = json.loads(it[1])
+        try:
+            print(it[0])
+            print(it[1])
+            obj = json.loads(it[1])
 
-        obj = Expenses(**obj)
-        print(obj.printAll())
-        print(obj.calc())
-        return obj
+            obj = Expenses(**obj)
+            print(obj.printAll())
+            print(obj.calc())
+            return obj
+        except:
+            print('Error reading from DB')
+            return Expenses(chatid)
     else:
         return Expenses(chatid)
 
@@ -42,15 +46,15 @@ def saveExpenses(expense):
 
     cnx.commit()
 
-id = '55557'
+# id = '55557'
 
 # exp = Expenses(id)
 # exp.addItem(Item('12-11', 100, 'Kesha', 'Cake'))
 # saveExpenses(exp)
 
-exp = loadExpenses(id)
-exp.addItem(Item('11-11', 300, 'Liza', 'Buhlo2'))
-saveExpenses(exp)
+# exp = loadExpenses(id)
+# exp.addItem(Item(300, 'Liza', 'Buhlo2'))
+# saveExpenses(exp)
 
 # exp = Expenses('55556')
 # exp.addItem(Item('12-11', 100, 'Pool', 'Kesha'))
