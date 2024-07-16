@@ -13,6 +13,18 @@ cnx = mysql.connector.connect(user='root',
 
 print('2')
 
+EXP_TABLE = 'exp2'
+
+CHECK_TABLE = (f"""SELECT * 
+    FROM information_schema.tables
+    WHERE table_schema = 'yourdb' 
+        AND table_name = '{EXP_TABLE}'
+    LIMIT 1;""")
+
+DDL = """ 
+    
+"""
+
 def loadExpenses(chatid):
     mycursor = cnx.cursor()
     vals = [chatid]

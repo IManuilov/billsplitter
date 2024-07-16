@@ -2,6 +2,7 @@ import telebot
 from telebot.storage import StateMemoryStorage
 from telebot import types
 
+from cmdparser import trycmd
 from groupExpenses import Expenses, Item
 from store import loadExpenses, saveExpenses
 
@@ -11,20 +12,9 @@ TELEBOT_TOKEN = "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"
 state_storage = StateMemoryStorage()
 bot = telebot.TeleBot(TELEBOT_TOKEN, state_storage=state_storage)
 
-def parse(msg):
-    msg = msg.replace('/', '')
 
-    spl = msg.split(' ', 1)
 
-    if spl[0].isdigit():
-        descr = ''
-        if len(spl) > 1:
-            descr = spl[1]
 
-        return int(spl[0]), descr
-
-    else:
-        return None, None
 
 
 # embedded db scripts
@@ -33,8 +23,21 @@ def parse(msg):
 # help
 # показывать список команд при /
 # удаление кнопки
-# взаиморасчеты
+# +взаиморасчеты
+# +расход не на всех
+# +group by date
+# format float
+
 # + регистрация юзеров
+
+# @bot.inline_handler(func=lambda query: len(query.query) > 0)
+# def query_text(query):
+#     print('query', query)
+#     prompt = types.InlineQueryResultArticle(id=1, title='user1', description='polz1',
+#                                             input_message_content=types.InputTextMessageContent(
+#                                                 message_text="kesha"
+#                                             ))
+#     bot.answer_inline_query(query.id, [prompt])
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -84,7 +87,8 @@ def handle_buttons(call):
         table = expense.printAll()
         t2 = expense.calc()
         bot.send_message(call.message.chat.id, '<pre>'+table + '\n' + t2+'</pre>', parse_mode = 'HTML')
-
+    elif call.data.startswith("usr"):
+        print(call.data)
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
@@ -93,19 +97,35 @@ def get_text_messages(message):
     chatid = message.chat.id
     print(chatid, user, msg)
 
-    cmd, descr = parse(msg)
+    cmd = trycmd(msg)
     if not cmd:
+        bot.reply_to(message, 'bad command')
         return
 
     expense = loadExpenses(str(chatid))
-    expense.addItem(Item(cmd, user, descr))
 
-    table = expense.printAll()
+    expense.addExp(user, cmd)
+
+    table = expense.printTbl()
     t2 = expense.calc()
 
-    bot.reply_to(message, '<pre>'+table + '\n' + t2+'</pre>', parse_mode = 'HTML')
+    markup = types.InlineKeyboardMarkup()
+    # for i, it in enumerate(expense.userSet()):
+    #     markup.add(types.InlineKeyboardButton(text=str(it), callback_data='usr' + it))
+
+
+    resp = ('<pre>'
+            + table + '\n\n' + t2
+            +'</pre>'
+            )
+    bot.reply_to(message, resp,
+                 parse_mode = 'HTML',
+                 reply_markup=markup)
 
     saveExpenses(expense)
+
+
+
 
 bot.polling(none_stop=True)
 

@@ -1,35 +1,25 @@
 import json
 from collections import defaultdict
 
-from datetime import datetime
 
 
-def nowstr():
-    nw = datetime.now()
-    date_time = nw.strftime("%m/%d")
-    return date_time
+from calc import calc
+from item import Item
+from table import prep
 
-class Item:
 
-    def __init__(self, amount, user, description, date=nowstr()):
-        self.date = date
-        self.amount = amount
-        self.user = user
-        self.description = description
-        #
-
-    def __str__(self):
-        return f"{self.amount:9} | {self.user[:7]:7} | {self.description[:10]:11} | {self.date:5}"
-
-    @staticmethod
-    def head():
-        return f"{'amount':9} | {'user':7} | {'description':11} | {'date':5}\n"
 
 class Expenses:
     def __init__(self, chatid, items=[], users=[]):
         self.chatid = chatid
         self.items = [Item(**it) for it in items]
         self.users = users
+
+
+    def addExp(self, user, cmd):
+        spl_usr = self.getSplitUsers(cmd)
+
+        self.addItem(Item(cmd['amount'], user, cmd['description'], splitusers=spl_usr))
 
 
     def addItem(self, item):
@@ -41,29 +31,54 @@ class Expenses:
     def userSet(self):
         return set([it.user for it in self.items])
 
-    def printAll(self):
-        table = (Item.head() +
-                 '\n'.join([str(it) for it in self.items]))
-        print(table)
-        return table
-    def calc(self):
+    def printTbl(self):
         res = defaultdict(list)
-        for it in self.items: res[it.user].append(it.amount)
+        for it in self.items: res[it.date].append(it)
 
-        u2a = {}
-        for u, l in res.items():
-            u2a[u] = sum(l)
+        table = [['money', 'who', 'description', 'excep']]
+        for dt, lst in res.items():
+            table.append([dt])
 
-        if len(u2a) == 0:
-            return
+            for it in lst:
+                table.append([str(it.amount), it.user, it.description, '.'.join(it.splitusers)])
 
-        fullsum = sum(u2a.values())
-        expsum = fullsum / len(u2a)
-        table = ('Кто     |   Сколько\n' +
-            ''.join([f"{u} | {s-expsum}\n"  for u, s in u2a.items()]))
+        return prep(table)
 
-        print(table)
-        return  table
+    def printAll(self):
+        txt = '0123456789012345678901234567890123456789\n'+Item.head()
+
+        res = defaultdict(list)
+        for it in self.items: res[it.date].append(it)
+
+        for dt, lst in res.items():
+            txt += dt + '\n'
+            txt += '\n'.join([str(i) for i in lst])
+            txt += '\n'
+        return txt
+
+    def calc(self):
+        # res = defaultdict(list)
+        # for it in self.items: res[it.user].append(it.amount)
+        #
+        # u2a = {}
+        # for u, l in res.items():
+        #     u2a[u] = sum(l)
+        #
+        # if len(u2a) == 0:
+        #     return
+        #
+        # fullsum = sum(u2a.values())
+        # expsum = fullsum / len(u2a)
+        # table = [['who', 'owed']]   # lent
+        # for u, s in u2a.items():
+        #     table.append([u, str(s - expsum)])
+
+        u2a = calc(self.items)
+        tbl = [['who','balance']]
+        for u,a in u2a.items():
+            tbl.append([u,str(a)])
+
+        return prep(tbl)
 
     def clear(self):
         self.items = []
@@ -74,6 +89,14 @@ class Expenses:
             default=lambda o: o.__dict__,
             sort_keys=True,
             indent=4)
+
+    def getSplitUsers(self, cmd):
+        spl_usr = []
+        if cmd['ultype'] == '>':
+            spl_usr = cmd['ulist']
+        elif cmd['ultype'] == '-':
+            spl_usr = self.userSet() - set(cmd['ulist'])
+        return spl_usr
 
 # exp = Expenses()
 # exp.addItem(Item('', 100, 'Kesha', 'морковь'))
