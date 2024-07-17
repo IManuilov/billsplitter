@@ -14,7 +14,10 @@ def trycmd(str):
     if amount == None:
         return None
 
-    next_str = spl[1] if len(spl) > 0 else ''
+    next_str = ''
+    if len(spl) > 1:
+        next_str = spl[1]
+
     descr, ultype, ulist = retreive(next_str)
 
     return {

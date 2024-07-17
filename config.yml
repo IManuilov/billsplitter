@@ -1,0 +1,7 @@
+#ilovke bot
+TELEBOT_TOKEN: "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"
+
+DB_USER: 'root'
+DB_PASSWORD: 'secret'
+DB_HOST: 'localhost'
+DB_NAME: 'mySchema'

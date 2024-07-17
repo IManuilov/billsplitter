@@ -2,15 +2,16 @@ import telebot
 from telebot.storage import StateMemoryStorage
 from telebot import types
 
+from Config import config
 from cmdparser import trycmd
 from groupExpenses import Expenses, Item
 from store import loadExpenses, saveExpenses
 
 #ilovke bot
-TELEBOT_TOKEN = "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"
+# TELEBOT_TOKEN = "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"
 
 state_storage = StateMemoryStorage()
-bot = telebot.TeleBot(TELEBOT_TOKEN, state_storage=state_storage)
+bot = telebot.TeleBot(config.TELEBOT_TOKEN, state_storage=state_storage)
 
 
 

@@ -8,6 +8,8 @@ from item import Item
 from table import prep
 
 
+def strmoney(fl):
+    return ('{0:.2f}'.format(fl)).replace('.00','')
 
 class Expenses:
     def __init__(self, chatid, items=[], users=[]):
@@ -40,21 +42,11 @@ class Expenses:
             table.append([dt])
 
             for it in lst:
-                table.append([str(it.amount), it.user, it.description, '.'.join(it.splitusers)])
+                amount_s = strmoney(it.amount)
+                table.append([amount_s, it.user, it.description, '.'.join(it.splitusers)])
 
         return prep(table)
 
-    def printAll(self):
-        txt = '0123456789012345678901234567890123456789\n'+Item.head()
-
-        res = defaultdict(list)
-        for it in self.items: res[it.date].append(it)
-
-        for dt, lst in res.items():
-            txt += dt + '\n'
-            txt += '\n'.join([str(i) for i in lst])
-            txt += '\n'
-        return txt
 
     def calc(self):
         # res = defaultdict(list)
@@ -76,7 +68,7 @@ class Expenses:
         u2a = calc(self.items)
         tbl = [['who','balance']]
         for u,a in u2a.items():
-            tbl.append([u,str(a)])
+            tbl.append([u,strmoney(a)])
 
         return prep(tbl)
 

@@ -15,7 +15,7 @@ def prep(table):
     # print(maxwidth)
     truncwidth = maxwidth.copy()
     ptr = 1
-    while sum(truncwidth) > 25 - len(maxwidth):
+    while sum(truncwidth) > 35 - len(maxwidth):
         im = truncwidth.index(max(truncwidth[1:]),1)
         # print(im)
         truncwidth[im] -= 1

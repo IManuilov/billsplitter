@@ -2,33 +2,56 @@ import json
 
 import mysql.connector
 
-from groupExpenses import Expenses, Item
+from Config import config
+from cmdparser import trycmd
+from groupExpenses import Expenses
 
 print('1')
-cnx = mysql.connector.connect(user='root',
-                              password='secret',
-                              host='localhost',
-                              database='mySchema'
-                              )
+EXP_TABLE = 'exp3'
 
-print('2')
+DB_USER: 'root'
+DB_PASSWORD: 'secret'
+DB_HOST: 'localhost'
+DB_NAME: 'mySchema'
 
-EXP_TABLE = 'exp2'
+cnx = mysql.connector.connect(
+    user=config.DB_USER,
+    password=config.DB_PASSWORD,
+    host=config.DB_HOST,
+    database=config.DB_NAME
+    )
+
+print('db opened')
+
 
 CHECK_TABLE = (f"""SELECT * 
     FROM information_schema.tables
-    WHERE table_schema = 'yourdb' 
+    WHERE table_schema = '{config.DB_NAME}' 
         AND table_name = '{EXP_TABLE}'
-    LIMIT 1;""")
+    LIMIT 1;
+""")
 
-DDL = """ 
-    
+DDL = f""" 
+CREATE TABLE {EXP_TABLE} (
+    chatid varchar(32),
+    data text,
+	PRIMARY KEY (chatid)
+);    
 """
+
+mycursor = cnx.cursor()
+mycursor.execute(CHECK_TABLE)
+it = mycursor.fetchall()
+print(len(it))
+if (len(it) == 0):
+    mycursor = cnx.cursor()
+    mycursor.execute(DDL)
+
 
 def loadExpenses(chatid):
     mycursor = cnx.cursor()
     vals = [chatid]
-    mycursor.execute("SELECT * FROM exp2 where chatid = %s", vals)
+    mycursor.execute(f"SELECT * FROM {EXP_TABLE} where chatid = %s", vals)
     it = mycursor.fetchone()
     if it:
         try:
@@ -52,17 +75,18 @@ def saveExpenses(expense):
     data = expense.toJSON()#json.dumps(expense)
     print(data)
 
-    sql = "REPLACE INTO exp2 (chatid, data) VALUES (%s, %s)"
+    sql = f"REPLACE INTO {EXP_TABLE} (chatid, data) VALUES (%s, %s)"
     val = (expense.chatid, data)
     mycursor.execute(sql, val)
 
     cnx.commit()
 
-# id = '55557'
+id = '55557'
 
-# exp = Expenses(id)
-# exp.addItem(Item('12-11', 100, 'Kesha', 'Cake'))
-# saveExpenses(exp)
+exp = Expenses(id)
+cmd = trycmd('/100 r')
+exp.addExp('ilovke', cmd)
+saveExpenses(exp)
 
 # exp = loadExpenses(id)
 # exp.addItem(Item(300, 'Liza', 'Buhlo2'))
