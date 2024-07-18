@@ -7,6 +7,11 @@ from calc import calc
 from item import Item
 from table import prep
 
+def serial(o):
+    # print(o)
+    if isinstance(o, set):
+        return [i for i in o]
+    return o.__dict__
 
 def strmoney(fl):
     return ('{0:.2f}'.format(fl)).replace('.00','')
@@ -31,7 +36,13 @@ class Expenses:
         self.users.append(user)
 
     def userSet(self):
-        return set([it.user for it in self.items])
+        # return set([it.user for it in self.items])
+
+        allusers = set([it.user for it in self.items]);
+        for it in self.items:
+            for su in it.splitusers:
+                allusers.add(su)
+        return allusers
 
     def printTbl(self):
         res = defaultdict(list)
@@ -78,7 +89,7 @@ class Expenses:
     def toJSON(self):
         return json.dumps(
             self,
-            default=lambda o: o.__dict__,
+            default=lambda o: serial(o),
             sort_keys=True,
             indent=4)
 

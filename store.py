@@ -82,17 +82,28 @@ def saveExpenses(expense):
 
     cnx.commit()
 
-id = '55557'
-
-exp = Expenses(id)
-cmd = trycmd('/100 r')
-exp.addExp('ilovke', cmd)
-saveExpenses(exp)
-
-# exp = loadExpenses(id)
-# exp.addItem(Item(300, 'Liza', 'Buhlo2'))
+# id = '55557'
+#
+# exp = Expenses(id)
+# exp.addExp('olga', trycmd('/0 r'))
+#
+# exp.addExp('ilovke', trycmd('/100 r'))
+#
+# exp.addExp('olga', trycmd('/100 r2 -@ilovke'))
+#
 # saveExpenses(exp)
-
-# exp = Expenses('55556')
-# exp.addItem(Item('12-11', 100, 'Pool', 'Kesha'))
-# saveExpenses(exp.chatid, exp)
+#
+# exp = loadExpenses(id)
+# exp.addExp('ilovke', trycmd('/200 r'))
+# exp.addExp('olga', trycmd('/1200 r >@ilovke'))
+# saveExpenses(exp)
+#
+# exp = loadExpenses(id)
+#
+# print(exp.printTbl())
+#
+# print(exp.calc())
+#
+# # exp = Expenses('55556')
+# # exp.addItem(Item('12-11', 100, 'Pool', 'Kesha'))
+# # saveExpenses(exp.chatid, exp)

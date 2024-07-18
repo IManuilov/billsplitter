@@ -1,4 +1,4 @@
-
+import json
 from datetime import datetime
 
 def nowstr():
@@ -15,4 +15,11 @@ class Item:
         self.description = description
         self.splitusers = splitusers
         #
+
+    def toJSON(self):
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__(),
+            sort_keys=True,
+            indent=4)
 
