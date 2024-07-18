@@ -1,4 +1,5 @@
 import json
+import traceback
 
 import mysql.connector
 
@@ -60,11 +61,11 @@ def loadExpenses(chatid):
             obj = json.loads(it[1])
 
             obj = Expenses(**obj)
-            print(obj.printAll())
+            print(obj.printTbl())
             print(obj.calc())
             return obj
         except:
-            print('Error reading from DB')
+            print(traceback.format_exc())
             return Expenses(chatid)
     else:
         return Expenses(chatid)
