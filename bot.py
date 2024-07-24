@@ -18,17 +18,20 @@ bot = telebot.TeleBot(config.TELEBOT_TOKEN, state_storage=state_storage)
 
 
 
-# embedded db scripts
 # db best practice
-# конфиг
 # help
 # показывать список команд при /
 # удаление кнопки
+# ругаться на несуествующих юзеров
+# ругаться на неформат
+# подумать над ситуациий с новым юзером после того как расходы уже добавлены
+
+# +конфиг
 # +взаиморасчеты
 # +расход не на всех
+# +embedded db scripts
 # +group by date
-# format float
-
+# +format float
 # + регистрация юзеров
 
 # @bot.inline_handler(func=lambda query: len(query.query) > 0)
@@ -51,6 +54,17 @@ def start_message(message):
     markup.add(types.InlineKeyboardButton(text="Я в деле", callback_data='add'))
 
     bot.send_message(message.chat.id, 'обнулили', reply_markup=markup)
+
+
+@bot.message_handler(commands=['help'])
+def help(message):
+    bot.send_message(message.chat.id,
+                     """
+                     \\450 - добавить расход 450, разделить на всех участников 
+                     \\450 молоко - добавить расход и комментарий, разделить на всех участников 
+                     \\450 молоко -@dima - добавить расход, разделить на всех кроме dima
+                     \\450 >@dima @inna - добавить расход, разделить на dima и inna 
+                     """)
 
 
 @bot.message_handler(commands=['del'])

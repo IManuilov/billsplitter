@@ -2,6 +2,7 @@ import json
 import traceback
 
 import mysql.connector
+from mysql.connector import OperationalError
 
 from Config import config
 from cmdparser import trycmd
@@ -15,12 +16,17 @@ DB_PASSWORD: 'secret'
 DB_HOST: 'localhost'
 DB_NAME: 'mySchema'
 
-cnx = mysql.connector.connect(
-    user=config.DB_USER,
-    password=config.DB_PASSWORD,
-    host=config.DB_HOST,
-    database=config.DB_NAME
+
+def connect():
+    return mysql.connector.connect(
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        host=config.DB_HOST,
+        database=config.DB_NAME
     )
+
+
+cnx = connect()
 
 print('db opened')
 
@@ -49,20 +55,33 @@ if (len(it) == 0):
     mycursor.execute(DDL)
 
 
+def get_cursor():
+    global cnx
+
+    try:
+        mycursor = cnx.cursor()
+    except (OperationalError) as er:
+        print('OperationalError, try reconnect')
+        cnx = connect()
+        mycursor = cnx.cursor()
+
+    return mycursor
+
 def loadExpenses(chatid):
-    mycursor = cnx.cursor()
+    print('load', chatid)
+    mycursor = get_cursor()
     vals = [chatid]
     mycursor.execute(f"SELECT * FROM {EXP_TABLE} where chatid = %s", vals)
     it = mycursor.fetchone()
     if it:
         try:
-            print(it[0])
-            print(it[1])
+            #print(it[0])
+            #print(it[1])
             obj = json.loads(it[1])
 
             obj = Expenses(**obj)
-            print(obj.printTbl())
-            print(obj.calc())
+            #print(obj.printTbl())
+            #print(obj.calc())
             return obj
         except:
             print(traceback.format_exc())
@@ -71,7 +90,7 @@ def loadExpenses(chatid):
         return Expenses(chatid)
 
 def saveExpenses(expense):
-    mycursor = cnx.cursor()
+    mycursor = get_cursor()
 
     data = expense.toJSON()#json.dumps(expense)
     print(data)

@@ -3,7 +3,7 @@ from datetime import datetime
 
 def nowstr():
     nw = datetime.now()
-    date_time = nw.strftime("%m/%d")
+    date_time = nw.strftime("%d/%m")
     return date_time
 
 class Item:
