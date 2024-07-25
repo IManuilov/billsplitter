@@ -6,6 +6,8 @@ from collections import defaultdict
 from calc import calc
 from item import Item
 from table import prep
+from utils import strmoney
+
 
 def serial(o):
     # print(o)
@@ -13,8 +15,6 @@ def serial(o):
         return [i for i in o]
     return o.__dict__
 
-def strmoney(fl):
-    return ('{0:.2f}'.format(fl)).replace('.00','')
 
 class Expenses:
     def __init__(self, chatid, items=[], users=[]):
@@ -22,11 +22,23 @@ class Expenses:
         self.items = [Item(**it) for it in items]
         self.users = users
 
+        if not all(it.id != None for it in self.items):
+            for i, it in enumerate(self.items):
+                it.id = i
+
+    def get_last_id(self):
+        it = max(self.items, key=lambda i : i.get_id(), default=None)
+        if it:
+            return it.id
+        else:
+            return 0
 
     def addExp(self, user, cmd):
         spl_usr = self.getSplitUsers(cmd)
-
-        self.addItem(Item(cmd['amount'], user, cmd['description'], splitusers=spl_usr))
+        last_id = self.get_last_id()
+        it = Item(cmd['amount'], user, cmd['description'], splitusers=spl_usr, id=last_id + 1)
+        self.addItem(it)
+        return it
 
 
     def addItem(self, item):

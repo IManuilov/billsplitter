@@ -3,8 +3,11 @@ from groupExpenses import Expenses, Item
 
 exp = Expenses('123')
 
+print(exp.get_last_id())
+
 cmd = trycmd('/0')
 exp.addExp('user1', cmd)
+print(exp.get_last_id())
 
 cmd = trycmd('/0 r')
 exp.addExp('user2', cmd)

@@ -93,7 +93,7 @@ def saveExpenses(expense):
     mycursor = get_cursor()
 
     data = expense.toJSON()#json.dumps(expense)
-    print(data)
+    # print(data)
 
     sql = f"REPLACE INTO {EXP_TABLE} (chatid, data) VALUES (%s, %s)"
     val = (expense.chatid, data)
