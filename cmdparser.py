@@ -27,6 +27,13 @@ def trycmd(str):
         'ulist': ulist
     }
 
+def get_cmd(amount, descr, ultype, ulist):
+    return {
+        'amount': amount,
+        'description': descr,
+        'ultype': ultype,
+        'ulist': ulist
+    }
 
 def retr_amount(str):
     try:

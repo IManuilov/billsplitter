@@ -1,8 +1,9 @@
 from telebot import types
+from telebot.types import ReplyKeyboardMarkup
 
 from cmdparser import trycmd
 from item import Item
-from store import loadExpenses, saveExpenses
+from database import loadExpenses, saveExpenses
 from utils import strmoney
 
 
@@ -48,6 +49,24 @@ def del_button(call):
     return head + '\n' + get_exp_state(expense)
 
 
+
+
+def get_users(message, ont_time):
+    chatid = message.chat.id
+    expense = loadExpenses(str(chatid))
+    markup = ReplyKeyboardMarkup(row_width=5, resize_keyboard=True, one_time_keyboard=ont_time)
+
+        # markup.add(types.KeyboardButton(text='На всех'))
+
+    for it in expense.userSet():
+        markup.add(types.KeyboardButton(text=it))
+    if not ont_time:
+        markup.add(
+            types.KeyboardButton(text='На всех'), types.KeyboardButton(text='Хватит'))
+
+    return markup
+
+
 def del_cmd(message):
     chatid = message.chat.id
     expense = loadExpenses(str(chatid))
@@ -67,23 +86,25 @@ def add_expense_cmd(message):
         resp = 'bad command'
     else:
 
-        expense = loadExpenses(str(chatid))
+        resp = add_expense(chatid, cmd, user)
 
-        it = expense.addExp(user, cmd)
+    return resp
 
-        saveExpenses(expense)
-        if len(it.splitusers) == 0:
-            users = 'все'
-        else:
-            users = ' '.join(it.splitusers)
 
-        user_count = len(it.splitusers)
-        if user_count == 0:
-            user_count = len(expense.userSet())
-        spl_amount = it.amount / user_count
-        head = f'добавлен расход {it.toStr()}.\n{users} должны {user} по {strmoney(spl_amount)} денег'
-
-        resp = head + '\n' + get_exp_state(expense)
+def add_expense(chatid, cmd, user):
+    expense = loadExpenses(str(chatid))
+    it = expense.addExp(user, cmd)
+    saveExpenses(expense)
+    if len(it.splitusers) == 0:
+        users = 'все'
+    else:
+        users = ' '.join(it.splitusers)
+    user_count = len(it.splitusers)
+    if user_count == 0:
+        user_count = len(expense.userSet())
+    spl_amount = it.amount / user_count
+    head = f'добавлен расход {it.toStr()}.\n{users} должны {user} по {strmoney(spl_amount)} денег'
+    resp = head + '\n' + get_exp_state(expense)
     return resp
 
 

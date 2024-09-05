@@ -1,10 +1,12 @@
 import telebot
 from telebot.storage import StateMemoryStorage
 from telebot import types
+from telebot.types import ReplyKeyboardRemove
 
 from Config import config
-from controller import add_button, del_button, add_expense_cmd, del_cmd, clear_cmd
-from store import loadExpenses, saveExpenses
+from cmdparser import get_cmd
+from controller import add_button, del_button, add_expense_cmd, del_cmd, clear_cmd, get_users, add_expense
+from database import loadExpenses, saveExpenses
 
 
 state_storage = StateMemoryStorage()
@@ -45,26 +47,117 @@ def start_message(message):
     bot.send_message(message.chat.id, 'Начали с нуля. Нажмите кнопку все кто учавствует в разделе расходов', reply_markup=markup)
 
 
+help_msg = """
+добавить в группу бот и выполнить команду
+<code>/start</code>
+после чего все должны нажать кнопку "Я в деле"
+
+далее могут быть такие сценарии:
+
+я купил в магазине продуктов на всех:
+<code>/4000 продукты</code>
+
+я купил алкоголь на всех, но друг№1 его пить не будет:
+<code>/2500 алкоголь - @drug1</code>
+(после символа '-' (минус) перечисляем через пробел никнеймы тех кого исключить)
+
+я оплатил в ресторане счет за себя и 2х товарищей:
+<code>/1000 рестик > @moj_nik @drug2 @drug3</code>
+(после символа '>' перечисляем всех через пробел включая себя)
+
+я оплатил кому-то его покупки:
+<code>/300 сувениры > @drug4</code>
+
+я вернул кому-то деньги:
+<code>/1300 вернул > @drug5</code>
+
+
+вбить чужой счет:
+<code>/add</code>
+далее отвечать на вопросы
+
+удалить неверно вбитый чек
+<code>/del</code>
+"""
+
+
 @bot.message_handler(commands=['help'])
 def help(message):
-    bot.send_message(message.chat.id,
-                     """примеры запросов:
-<code>/450</code> добавить расход 450, разделить на всех участников 
-<code>/450 билеты</code> - добавить расход и комментарий, разделить на всех участников 
-<code>/450 магазин -@dima</code> - добавить расход, разделить на всех участников кроме dima
-<code>/450 гостиница >@dima @inna</code> - добавить расход, разделить между dima и inna 
-<code>/del</code> выбрать для удаления
-<code></code>
-""", parse_mode = 'HTML')
+    bot.send_message(message.chat.id, help_msg, parse_mode = 'HTML')
 
+
+def description_callback(message, data):
+    print('description_callback', message.text)
+    data['description'] = message.text
+    print(data)
+
+    resp = add_expense(message.chat.id,
+                get_cmd(int(data['amount'][1:]), data['description'], data['ultype'], data['whom']),
+                data['who'])
+
+    bot.reply_to(message, resp,
+                 parse_mode='HTML',
+                 reply_markup=None)
+
+def amount_callback(message, data):
+    print('amount_callback', message.text)
+    data['amount'] = message.text
+    msg = bot.send_message(message.chat.id, 'Введите описание траты (через /):')
+    bot.register_next_step_handler(
+        msg, description_callback, data)
+
+
+def whom_callback(message, data):
+    print('whom_callback', message.text)
+
+    if 'whom' not in data:
+        data['whom'] = []
+
+    if message.text == 'Хватит' or message.text == 'На всех':
+        if message.text == 'Хватит':
+            data['ultype'] = '>'
+        else:
+            data['ultype'] = ''
+
+        msg = bot.send_message(message.chat.id, 'Сумма (через <code>/</code>):', reply_markup=ReplyKeyboardRemove(), parse_mode = 'HTML')
+        bot.register_next_step_handler(
+            msg, amount_callback, data)
+
+    else:
+        data['whom'].append(message.text)
+        markup = get_users(message, False)
+        msg = bot.send_message(message.chat.id, 'На кого делим сумму:\n ' + ' '.join(data['whom']) + '\nДобавить еще')#, reply_markup=markup
+        bot.register_next_step_handler(
+            msg, whom_callback, data)
+
+
+def who_callback(message, data):
+    print('who_callback', message.text)
+    data['who'] = message.text
+
+    markup = get_users(message, False)
+    msg = bot.send_message(message.chat.id, 'На кого делим сумму:', reply_markup=markup)
+    bot.register_next_step_handler(
+        msg, whom_callback, data)
+
+    # bot.send_message(message.chat.id, horoscope_message, parse_mode="Markdown")
 
 # команда для вывода кнопок удаления расходов
+@bot.message_handler(commands=['add'])
+def start_message(message):
+    markup = get_users(message, True)
+
+    msg = bot.send_message(message.chat.id, 'Выберите, кто заплатил?', reply_markup=markup)
+    data = {}
+    bot.register_next_step_handler(
+        msg, who_callback, data)
+
+# adding expense script
 @bot.message_handler(commands=['del'])
 def start_message(message):
     markup = del_cmd(message)
 
     bot.send_message(message.chat.id, 'удаление', reply_markup=markup)
-
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -90,7 +183,6 @@ def get_text_messages(message):
     # for i, it in enumerate(expense.userSet()):
     #     markup.add(types.InlineKeyboardButton(text=str(it), callback_data='usr' + it))
     markup = None
-
 
     bot.reply_to(message, resp,
                  parse_mode = 'HTML',

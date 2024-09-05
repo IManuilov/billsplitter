@@ -75,13 +75,9 @@ def loadExpenses(chatid):
     it = mycursor.fetchone()
     if it:
         try:
-            #print(it[0])
-            #print(it[1])
             obj = json.loads(it[1])
 
             obj = Expenses(**obj)
-            #print(obj.printTbl())
-            #print(obj.calc())
             return obj
         except:
             print(traceback.format_exc())
@@ -101,28 +97,3 @@ def saveExpenses(expense):
 
     cnx.commit()
 
-# id = '55557'
-#
-# exp = Expenses(id)
-# exp.addExp('olga', trycmd('/0 r'))
-#
-# exp.addExp('ilovke', trycmd('/100 r'))
-#
-# exp.addExp('olga', trycmd('/100 r2 -@ilovke'))
-#
-# saveExpenses(exp)
-#
-# exp = loadExpenses(id)
-# exp.addExp('ilovke', trycmd('/200 r'))
-# exp.addExp('olga', trycmd('/1200 r >@ilovke'))
-# saveExpenses(exp)
-#
-# exp = loadExpenses(id)
-#
-# print(exp.printTbl())
-#
-# print(exp.calc())
-#
-# # exp = Expenses('55556')
-# # exp.addItem(Item('12-11', 100, 'Pool', 'Kesha'))
-# # saveExpenses(exp.chatid, exp)
