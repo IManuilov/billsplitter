@@ -60,7 +60,7 @@ class Expenses:
         res = defaultdict(list)
         for it in self.items: res[it.date].append(it)
 
-        table = [['money', 'who', 'description', 'excep']]
+        table = [['сумма', 'кто', 'описание', 'кроме']]
         for dt, lst in res.items():
             table.append([dt])
 

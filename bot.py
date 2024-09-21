@@ -88,24 +88,36 @@ def help(message):
 
 def description_callback(message, data):
     print('description_callback', message.text)
-    data['description'] = message.text
+    data['description'] = message.text[1:]
     print(data)
 
     resp = add_expense(message.chat.id,
-                get_cmd(int(data['amount'][1:]), data['description'], data['ultype'], data['whom']),
-                data['who'])
+        get_cmd(data['amount'],
+                data['description'],
+                data['ultype'],
+                data['whom']),
+        data['who'])
 
     bot.reply_to(message, resp,
                  parse_mode='HTML',
                  reply_markup=None)
 
+def get_int_amount(s):
+    s = s.replace('/','')
+    try:
+        return int(s)
+    except ValueError:
+        return None
+
 def amount_callback(message, data):
     print('amount_callback', message.text)
-    data['amount'] = message.text
-    msg = bot.send_message(message.chat.id, 'Введите описание траты (через /):')
-    bot.register_next_step_handler(
-        msg, description_callback, data)
-
+    amnt = get_int_amount(message.text)
+    if amnt:
+        data['amount'] = amnt
+        msg = bot.send_message(message.chat.id, 'Введите описание траты (через /):')
+        bot.register_next_step_handler(msg, description_callback, data)
+    else:
+        ask_amount_step(data, message, 'необходимо ввести число\n')
 
 def whom_callback(message, data):
     print('whom_callback', message.text)
@@ -118,17 +130,21 @@ def whom_callback(message, data):
             data['ultype'] = '>'
         else:
             data['ultype'] = ''
+            data['whom'] = []
 
-        msg = bot.send_message(message.chat.id, 'Сумма (через <code>/</code>):', reply_markup=ReplyKeyboardRemove(), parse_mode = 'HTML')
-        bot.register_next_step_handler(
-            msg, amount_callback, data)
+        ask_amount_step(data, message)
 
     else:
         data['whom'].append(message.text)
-        markup = get_users(message, False)
         msg = bot.send_message(message.chat.id, 'На кого делим сумму:\n ' + ' '.join(data['whom']) + '\nДобавить еще')#, reply_markup=markup
-        bot.register_next_step_handler(
-            msg, whom_callback, data)
+        bot.register_next_step_handler(msg, whom_callback, data)
+
+
+def ask_amount_step(data, message, txt=''):
+    msg = bot.send_message(message.chat.id, txt + 'Сумма (через <code>/</code>):',
+                           reply_markup=ReplyKeyboardRemove(),
+                           parse_mode='HTML')
+    bot.register_next_step_handler(msg, amount_callback, data)
 
 
 def who_callback(message, data):
@@ -137,20 +153,19 @@ def who_callback(message, data):
 
     markup = get_users(message, False)
     msg = bot.send_message(message.chat.id, 'На кого делим сумму:', reply_markup=markup)
-    bot.register_next_step_handler(
-        msg, whom_callback, data)
+    bot.register_next_step_handler(msg, whom_callback, data)
 
     # bot.send_message(message.chat.id, horoscope_message, parse_mode="Markdown")
 
-# команда для вывода кнопок удаления расходов
+# команда для запуска визарда для добавления расхода
 @bot.message_handler(commands=['add'])
 def start_message(message):
     markup = get_users(message, True)
 
     msg = bot.send_message(message.chat.id, 'Выберите, кто заплатил?', reply_markup=markup)
+    # объект для хранения ввода пользователя на всех шагах
     data = {}
-    bot.register_next_step_handler(
-        msg, who_callback, data)
+    bot.register_next_step_handler(msg, who_callback, data)
 
 # adding expense script
 @bot.message_handler(commands=['del'])
