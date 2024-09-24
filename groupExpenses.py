@@ -48,19 +48,19 @@ class Expenses:
         self.users.append(user)
 
     def userSet(self):
-        # return set([it.user for it in self.items])
+        return set(self.users)
 
-        allusers = set([it.user for it in self.items]);
-        for it in self.items:
-            for su in it.splitusers:
-                allusers.add(su)
-        return allusers
+        # allusers = set([it.user for it in self.items]);
+        # for it in self.items:
+        #     for su in it.splitusers:
+        #         allusers.add(su)
+        # return allusers
 
     def printTbl(self):
         res = defaultdict(list)
         for it in self.items: res[it.date].append(it)
 
-        table = [['сумма', 'кто', 'описание', 'кроме']]
+        table = [['сумма', 'кто', 'описание', 'кому']]
         for dt, lst in res.items():
             table.append([dt])
 
@@ -72,23 +72,8 @@ class Expenses:
 
 
     def calc(self):
-        # res = defaultdict(list)
-        # for it in self.items: res[it.user].append(it.amount)
-        #
-        # u2a = {}
-        # for u, l in res.items():
-        #     u2a[u] = sum(l)
-        #
-        # if len(u2a) == 0:
-        #     return
-        #
-        # fullsum = sum(u2a.values())
-        # expsum = fullsum / len(u2a)
-        # table = [['who', 'owed']]   # lent
-        # for u, s in u2a.items():
-        #     table.append([u, str(s - expsum)])
 
-        u2a = calc(self.items)
+        u2a = calc(self.items, self.users)
         tbl = [['who','balance']]
         for u,a in u2a.items():
             tbl.append([u,strmoney(a)])
@@ -97,6 +82,7 @@ class Expenses:
 
     def clear(self):
         self.items = []
+        self.users = []
 
     def toJSON(self):
         return json.dumps(
@@ -110,7 +96,7 @@ class Expenses:
         if cmd['ultype'] == '>':
             spl_usr = cmd['ulist']
         elif cmd['ultype'] == '-':
-            spl_usr = self.userSet() - set(cmd['ulist'])
+            spl_usr = set(self.users) - set(cmd['ulist'])
         return spl_usr
 
 # exp = Expenses()

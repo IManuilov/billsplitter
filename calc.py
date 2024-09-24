@@ -1,11 +1,11 @@
 from item import Item
 
 
-def calc(items):
-    allusers = set([it.user for it in items]);
-    for it in items:
-        for su in it.splitusers:
-            allusers.add(su)
+def calc(items, allusers):
+    # allusers = set([it.user for it in items]);
+    # for it in items:
+    #     for su in it.splitusers:
+    #         allusers.add(su)
 
     user2am = {us:0 for us in allusers}
 

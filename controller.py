@@ -13,19 +13,22 @@ def clear_cmd(message):
     expense.clear()
     saveExpenses(expense)
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton(text="Я в деле", callback_data='add'))
+    markup.add(types.InlineKeyboardButton(text="Я в деле", callback_data='addme'))
     return markup
 
-def add_button(call):
+def add_user_button(call):
     chatid = call.message.chat.id
     username = call.from_user.username
 
     print('add new user btn', chatid, username)
 
     expense = loadExpenses(chatid)
-    expense.addItem(Item(0, username, ''))
+    # expense.addItem(Item(0, username, ''))
+    if username not in expense.users:
+        expense.users.append(username)
+
     msg = (f'Добавлен новый участник <code>{username}</code>\n' +
-            'Список участников:<code>\n' + '\n'.join(expense.userSet()) + '</code>')
+            'Список участников:<code>\n' + '\n'.join(expense.users) + '</code>')
     saveExpenses(expense)
     return msg
 
@@ -58,7 +61,7 @@ def get_users(message, ont_time):
 
         # markup.add(types.KeyboardButton(text='На всех'))
 
-    for it in expense.userSet():
+    for it in expense.users:
         markup.add(types.KeyboardButton(text=it))
     if not ont_time:
         markup.add(
@@ -83,7 +86,7 @@ def add_expense_cmd(message):
     cmd = trycmd(msg)
     if not cmd:
         # bot.reply_to(message, 'bad command')
-        resp = 'bad command'
+        resp = 'неизвестная команда'
     else:
 
         resp = add_expense(chatid, cmd, user)
@@ -93,6 +96,14 @@ def add_expense_cmd(message):
 
 def add_expense(chatid, cmd, user):
     expense = loadExpenses(str(chatid))
+    if user not in expense.users:
+        return f"Неизвестный участник {user}. Надо сперва добавиться в список.."
+
+    dif = set(cmd['ulist']) - set(expense.users)
+    if len(dif) > 0:
+        return f"Неизвестные участники {dif}. Надо сперва добавиться в список."
+
+
     it = expense.addExp(user, cmd)
     saveExpenses(expense)
     if len(it.splitusers) == 0:
@@ -101,7 +112,7 @@ def add_expense(chatid, cmd, user):
         users = ' '.join(it.splitusers)
     user_count = len(it.splitusers)
     if user_count == 0:
-        user_count = len(expense.userSet())
+        user_count = len(expense.users)
     spl_amount = it.amount / user_count
     head = f'добавлен расход {it.toStr()}.\n{users} должны {user} по {strmoney(spl_amount)} денег'
     resp = head + '\n' + get_exp_state(expense)

@@ -1,14 +1,27 @@
 from cmdparser import trycmd
 from database import saveExpenses, loadExpenses
 from groupExpenses import Expenses
+from item import Item
 
-# exp = Expenses('123')
-exp = loadExpenses('123')
-exp.addExp('user2', trycmd('/20 >@user2'))
+chatid = "54547"
+# expense = loadExpenses(chatid)
+# expense.users.append("username1")
+# saveExpenses(expense)
+#
+# expense = loadExpenses(chatid)
+# expense.users.append("username2")
+# saveExpenses(expense)
+#
+# expense = loadExpenses(chatid)
+# expense.users.append("username3")
+# saveExpenses(expense)
 
-saveExpenses(exp)
-
-e2 = loadExpenses('123')
+expense = loadExpenses(chatid)
 
 
-print(e2.printTbl())
+print(expense.users)
+
+# expense.addItem(Item(10, "username2", '', splitusers=['username2', 'username3']))
+# saveExpenses(expense)
+
+print(expense.printTbl(), expense.calc())
