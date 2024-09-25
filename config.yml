@@ -1,12 +1,9 @@
-#ilovke bot
-#TELEBOT_TOKEN: "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"
+TELEBOT_TOKEN: "_____"
 
-# split bot
-TELEBOT_TOKEN: "7271490919:AAEDdyGIbVv8iOWeO8As5z_40LOZUu9-d1U"
 DB_USER: 'root'
-DB_PASSWORD: 'secret'
+DB_PASSWORD: '______'
 DB_HOST: 'localhost'
 DB_NAME: 'mySchema'
 
-#WORKING_PATH: "/working"
-WORKING_PATH: "c:/tmp/working"
+# WORKING_PATH: "/working"
+# WORKING_PATH: "c:/tmp/working"

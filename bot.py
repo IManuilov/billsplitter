@@ -130,9 +130,9 @@ app = Flask(__name__)
 def index():
     return "Congratulations, it's a web app!"
 
-class FlaskThread(threading.Thread):
-    def run(self) -> None:
-        app.run(host="0.0.0.0", port=9086)
+# class FlaskThread(threading.Thread):
+#     def run(self) -> None:
+#         app.run(host="0.0.0.0", port=9086)
 
 
 # class TelegramThread(threading.Thread):
@@ -140,7 +140,7 @@ class FlaskThread(threading.Thread):
 #         bot.polling(none_stop=True)
 
 if __name__ == "__main__":
-    flask_thread = FlaskThread()
-    flask_thread.start()
+    # flask_thread = FlaskThread()
+    # flask_thread.start()
 
     bot.polling(none_stop=True)
