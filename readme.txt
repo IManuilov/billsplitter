@@ -1,5 +1,5 @@
 билд
-docker build -t split .
+sudo docker build -t split .
 
 
 положить в {WORKING_PATH}  config.yml
@@ -8,7 +8,7 @@ docker build -t split .
     - Телеграмм токен
 
 запуск
-sudo docker run -d -it --rm -v "/home/dr/split:/working" --restart on-failure --name split split:latest
+sudo docker run -d -it -v "/home/dr/split:/working" --restart on-failure --name split split:latest
 
 
 

@@ -4,7 +4,7 @@ import traceback
 
 from pathlib import Path
 
-from Config import config
+from Config import config, get_working
 from groupExpenses import Expenses
 
 
@@ -12,7 +12,7 @@ def init():
     global cursor
     global connection
     # Устанавливаем соединение с базой данных
-    dbfolder = Path(config.WORKING_PATH) / 'my_database.db'
+    dbfolder = Path(get_working()) / 'my_database.db'
     print('dbfolder', dbfolder)
     connection = sqlite3.connect(dbfolder, check_same_thread=False)
     cursor = connection.cursor()
