@@ -1,9 +1,46 @@
-TELEBOT_TOKEN: "_____"
+#ilovke bot
+TELEBOT_TOKEN: "6964570328:AAEKJbpATcF8etTNegz6kOJCd-zfJFT_C_Q"
 
+# split bot
+#TELEBOT_TOKEN: "7271490919:AAEDdyGIbVv8iOWeO8As5z_40LOZUu9-d1U"
+
+# croc_ai_notification_bot
+#TELEBOT_TOKEN: "7695524539:AAFWYgGJhZNkpJBFfXFZdKL_cJ8Bzn0c2hY"
 DB_USER: 'root'
-DB_PASSWORD: '______'
+DB_PASSWORD: 'secret'
 DB_HOST: 'localhost'
 DB_NAME: 'mySchema'
-
 # WORKING_PATH: "/working"
 # WORKING_PATH: "c:/tmp/working"
+
+HELP_MSG: |
+  добавить в группу бот и выполнить команду
+  <code>/start</code>
+  после чего все должны нажать кнопку "Я в деле"
+
+  далее могут быть такие сценарии:
+
+  я купил в магазине продуктов на всех:
+  <code>/4000 продукты</code>
+
+  я купил алкоголь на всех, но друг№1 его пить не будет:
+  <code>/2500 алкоголь - @drug1</code>
+  (после символа '-' (минус) перечисляем через пробел никнеймы тех кого исключить)
+
+  я оплатил в ресторане счет за себя и 2х товарищей:
+  <code>/1000 рестик > @moj_nik @drug2 @drug3</code>
+  (после символа '>' перечисляем всех через пробел включая себя)
+
+  я оплатил кому-то его покупки:
+  <code>/300 сувениры > @drug4</code>
+
+  я вернул кому-то деньги:
+  <code>/1300 вернул > @drug5</code>
+
+
+  вбить чужой счет:
+  <code>/add</code>
+  далее отвечать на вопросы
+
+  удалить неверно вбитый чек
+  <code>/del</code>

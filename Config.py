@@ -10,7 +10,7 @@ def get_working():
         return env_working
     return '/working'
 
-with open(get_working() + '/config.yml', 'r', encoding='utf8') as ymlfile:
+with open('config.yml', 'r', encoding='utf8') as ymlfile:
     config = box.Box(yaml.safe_load(ymlfile))
 
     print('config:')
