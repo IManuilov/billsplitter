@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 
 class Msg():
@@ -6,6 +6,14 @@ class Msg():
         self.text = text
         self.markup = markup
         self.recipient_id = recipient_id
+
+class Debt:
+    def __init__(self, who: int, whom: int, amount: int, expid: int):
+        self.who = who
+        self.whom = whom
+        self.amount = amount
+        self.expid = expid
+
 
 class Expense:
     def __init__(self, id: int,  amount: int, name: str, who: int, whom: List[int]):
@@ -42,6 +50,14 @@ class Group:
         self.users = []
         self.expenses = []
         self.id_counter = 0
+
+    def get_debts(self, who: Optional[int]=None, whom: Optional[int]=None) -> List[Debt]:
+        result = []
+        for exp in self.expenses:
+            if (who is None or exp.who == who) and (whom is None or exp.is_user_in_debtors(whom)):
+                result.append(Debt(exp.who, exp.whom, exp.get_for_one_amount(), exp.id))
+
+        return result
 
     def get_expense_by_id(self, id):
         for expense in self.expenses:

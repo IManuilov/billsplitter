@@ -7,8 +7,9 @@ from telebot import types
 from telebot.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton, BotCommand
 
 from Config import config
-from b2.model import User, Msg, Expense
-from b2.b2controller import add_user_to_group, add_expense, get_groupid_by_userid, get_group_by_userid, start_group
+from b2.model import User, Msg, Expense, Group
+from b2.b2controller import add_user_to_group, add_expense, get_groupid_by_userid, get_group_by_userid, start_group, \
+    get_group_by_id
 from table import prep
 from utils import strmoney
 
@@ -18,7 +19,7 @@ bot = telebot.TeleBot(config.TELEBOT_TOKEN, state_storage=state_storage)
 bot.set_my_commands([
     BotCommand(command='/add', description='добавить траты'),
     BotCommand(command='/status', description='кому должен'),
-    BotCommand(command='/settle', description='расчитаться'),
+    BotCommand(command='/pay', description='расчитаться'),
     BotCommand(command='/start', description='начать с нуля'),
     # BotCommand(command='/del', description='удаление записей'),
 ]);
@@ -26,7 +27,7 @@ bot.set_my_commands([
 def send_all(msgs: List[Msg]):
     for msg in msgs:
         print('sendmsg:', msg.recipient_id, msg.text)
-        if msg.recipient_id > 1000:
+        if msg.recipient_id > 1000 or msg.recipient_id < 1000:
             bot.send_message(msg.recipient_id, msg.text, reply_markup=msg.markup)
 
 
@@ -148,6 +149,38 @@ def add_exp(message):
     bot.register_next_step_handler(msg, add_sum_callback, data)
 
 
+@bot.message_handler(commands=['all'])
+def show_group_status_all(message):
+    chatid = message.chat.id
+    group = get_group_by_id(chatid)
+
+    txt = grp_report(group, True)
+
+    bot.send_message(message.chat.id, txt)
+
+@bot.message_handler(commands=['short'])
+def show_group_status_short(message):
+    chatid = message.chat.id
+    group = get_group_by_id(chatid)
+
+    txt = grp_report(group, False)
+
+    bot.send_message(message.chat.id, txt)
+
+def grp_report(group: Group, full: bool):
+    txt = '|'
+    for ex in group.expenses:
+        txt += f"= {group.find_user_by_id(ex.who).name} заплатил {strmoney(ex.amount)} за '{ex.name}'\n"
+        one_amount = strmoney(ex.get_for_one_amount())
+        for usr in group.ids_to_users(ex.whom):
+            ok = usr.chatid in ex.paid or usr.chatid == ex.who
+            if full or not ok:
+                ok_str = '\t-ok' if ok else ''
+                txt += one_amount + '\t' + usr.name + ' ' + ok_str + '\n'
+        txt += '\n'
+
+    return txt
+
 @bot.message_handler(commands=['status'])
 def show_status(message):
     chatid = message.chat.id
@@ -163,17 +196,20 @@ def show_status(message):
 
     txt = 'Тебе должны\n'+'\n'.join([str(t) for t in tome])
     bot.send_message(message.chat.id, txt)
+
     #, parse_mode='MarkdownV2'
 
 
     ioweex = [ex for ex in group.expenses if chatid in ex.get_debtors()]
     iowe = []
+    sum_amount = 0
     for ex in ioweex:
         if ex.who != chatid:
-            iowe.append((strmoney(ex.get_for_one_amount()), ex.name, group.ids_to_users([ex.who])[0].name))
+            sum_amount += ex.get_for_one_amount()
+            iowe.append((strmoney(ex.get_for_one_amount()) +' ', ex.name, ' ' + group.ids_to_users([ex.who])[0].name))
 
     tb = "<pre>" + prep(iowe) + "</pre>"
-    txt = 'Ты должен\n' + tb #'\n'.join([str(t) for t in iowe])
+    txt = 'Ты должен ' + (strmoney(sum_amount)) + '\n' + tb
     bot.send_message(message.chat.id, txt, parse_mode='HTML')#, parse_mode='MarkdownV2'
 
 
@@ -197,74 +233,102 @@ def paid_callback(callback):
     he = group.find_user_by_id(expense.who)
     amount = str(expense.get_for_one_amount())
 
+    usr_to_id = expense.who
+    usr_to = group.find_user_by_id(usr_to_id)
+    my_id = callback.message.chat.id
+    group = get_group_by_userid(my_id)
+    markup = get_buttons_for_pay(group, my_id, usr_to_id)
+
+    bot.edit_message_text(callback.message.text + '\n+отдал ' + usr_to.name + ' ' + strmoney(expense.get_for_one_amount()),
+                          chat_id=callback.message.chat.id,
+                          message_id=callback.message.id,
+                          reply_markup=markup)
+
     send_all([
+        # себе
         Msg(f'возврат {he.name} {amount} за {expense.name}', None, my_id),
+        # кому вернул
         Msg(f'{me.name} вернул {amount} за {expense.name}', None, expense.who)
         ])
 
 
-@bot.callback_query_handler(func=lambda callback: True)
+@bot.callback_query_handler(func=lambda callback: callback.data.startswith('creditor:'))
 def select_paid_callback(callback):
-    # print('select_paid_callback', callback)
     print('select_paid_callback', callback.data)
-    usr_to_id = int(callback.data)
 
+    creditor_id = int(callback.data.replace('creditor:', ''))
     my_id = callback.message.chat.id
     group = get_group_by_userid(my_id)
-    usr_to = group.find_user_by_id(usr_to_id)
+    creditor = group.find_user_by_id(creditor_id)
+
+    markup = get_buttons_for_pay(group, my_id, creditor_id)
+
+    # ты должен {creditor.name} {sum}
+
+    txt = f"Перевод {creditor.name} по номеру {creditor.phone} в {creditor.bank}\nВыберите расходы которые были оплачены"
+
+    bot.edit_message_text(txt,
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.id,
+        reply_markup=markup)
+    # ,
+    #         parse_mode='MarkdownV2'
+    # bot.register_next_step_handler(msg, select_exp_callback, data)
 
 
+def get_buttons_for_pay(group, my_id, usr_to_id):
     markup = types.InlineKeyboardMarkup()
-
     sum_amount = 0
     for exp in group.expenses:
         if exp.who == usr_to_id and exp.is_user_in_debtors(my_id):
             sum_amount += exp.get_for_one_amount()
             markup.add(types.InlineKeyboardButton(str(exp.get_for_one_amount()) + " за " + exp.name,
                                                   callback_data='paid:' + str(exp.id)))
-
-    markup.add(types.InlineKeyboardButton('Все оплачено ' + str(sum_amount), callback_data='all'))
-
-    txt = f"Перевод {usr_to.name} по номеру *`{usr_to.phone}`* в {usr_to.bank}\nВыберите расходы которые были оплачены"
+    # markup.add(types.InlineKeyboardButton('Все оплачено ' + str(sum_amount), callback_data='all'))
+    return markup
 
 
-    msg = bot.send_message(callback.message.chat.id, txt + ' Что погасить?',
-                           reply_markup=markup,
-                           parse_mode='MarkdownV2')
-
-    # bot.register_next_step_handler(msg, select_exp_callback, data)
-
-
-@bot.message_handler(commands=['settle'])
+@bot.message_handler(commands=['pay'])
 def settle(message):
     chatid = message.chat.id
     group = get_group_by_userid(chatid)
 
-    iowe_expens = [ex for ex in group.expenses if chatid in ex.get_debtors()]
-    iowe = []
-    for ex in iowe_expens:
-        if ex.who != chatid:
-            iowe.append((ex.get_for_one_amount(), ex.who))
-
+    my_debts = group.get_debts(whom=chatid)
     grouped_data = {}
-    for item in iowe:
-        amount, chatid = item
-        if chatid in grouped_data:
-            grouped_data[chatid] += amount
+    for debt in my_debts:
+        if debt.who in grouped_data:
+            grouped_data[debt.who] += debt.amount
         else:
-            grouped_data[chatid] = amount
+            grouped_data[debt.who] = debt.amount
+
+    # iowe_expens = [ex for ex in group.expenses if chatid in ex.get_debtors()]
+    # iowe = []
+    # for ex in iowe_expens:
+    #     if ex.who != chatid:
+    #         iowe.append((ex.get_for_one_amount(), ex.who))
+    #
+    #
+    # grouped_data = {}
+    # for item in iowe:
+    #     amount, chatid = item
+    #     if chatid in grouped_data:
+    #         grouped_data[chatid] += amount
+    #     else:
+    #         grouped_data[chatid] = amount
 
     markup = types.InlineKeyboardMarkup()
     for chatid, amount in grouped_data.items():
         usr = group.find_user_by_id(chatid)
-        markup.add(types.InlineKeyboardButton(usr.name + " " + str(amount), callback_data=str(chatid)))
+        markup.add(types.InlineKeyboardButton(usr.name + " " + str(amount), callback_data="creditor:"+str(chatid)))
 
     bot.send_message(message.chat.id, 'Выбери с кем расчитаться:', reply_markup=markup)
     # bot.register_next_step_handler(msg, select_paid_callback, data)
 
 
-print('ready')
+
 if __name__ == "__main__":
+    print('===============ready===========')
+
     bot.polling(none_stop=True)
 
 

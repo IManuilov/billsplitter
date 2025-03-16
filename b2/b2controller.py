@@ -31,12 +31,16 @@ def return_expense(return_data):
     pass
 
 
+def get_group_by_id(groupid) -> Group:
+    group = load_group_by_id(groupid)
+    return group
+
 def get_group_by_userid(userid) -> Group:
     group = load_group_by_userid(userid)
     return group
 
 
-def get_groupid_by_userid(userid):
+def get_groupid_by_userid(userid) -> int:
     group = load_group_by_userid(userid)
     return group.chatid
 
