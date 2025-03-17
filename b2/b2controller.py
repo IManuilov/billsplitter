@@ -2,6 +2,7 @@ from telebot.types import ReplyKeyboardRemove
 
 from b2.model import Group, User, Expense, Msg
 from b2.db2 import save_group, load_group_by_userid, load_group_by_id, add_user_id_to_group_mapping, clear_group_mapping
+from utils import strmoney
 
 
 def start_group(message):
@@ -120,3 +121,41 @@ def add_payment(expense, group, my_id):
 
     return msgs
 
+def grp_report(group: Group, full: bool):
+    txt = ''
+    for ex in group.expenses:
+        txt += f"<B>{group.find_user_by_id(ex.creditor_id).name} заплатил {strmoney(ex.amount)} за '{ex.name}'</B>\n"
+        one_amount = strmoney(ex.get_for_one_amount())
+        for usr in group.ids_to_users(ex.debtor_ids):
+            ok = usr.chat_id in ex.paid_ids or usr.chat_id == ex.creditor_id
+            if full or not ok:
+                ok_in = '<s>' if ok else ''
+                ok_out = '</s>' if ok else ''
+                txt += ok_in + one_amount + '\t' + usr.name + ok_out + '\n'
+        txt += '\n'
+
+    if len(txt) == 0:
+        txt = 'Нет расходов'
+    return txt
+
+
+def get_status(chat_id, group, message):
+
+    my_creds = group.get_debts(filter_creditor_id=chat_id)
+
+    table = '\n'.join([f"{strmoney(t.amount)} {group.find_user_by_id(t.debtor_id).name} за {t.name}" for t in my_creds])
+    owe_to_you_txt = f'<B>Тебе должны {strmoney(sum([debt.amount for debt in my_creds]))}</B>\n{table}'
+
+    my_debts = group.get_debts(filter_debtor_id=chat_id)
+
+    for debt in my_debts:
+        print("my_debts", debt)
+
+    you_owe_txt = '<B>Ты должен ' + (strmoney(sum([debt.amount for debt in my_debts]))) + '</B>\n'
+    for debt in my_debts:
+        you_owe_txt += strmoney(debt.amount) + ' ' + group.find_user_by_id(debt.creditor_id).name + '\n'
+
+    return [
+        Msg(message.chat.id, owe_to_you_txt, parse_mode='HTML'),
+        Msg(message.chat.id, you_owe_txt, parse_mode='HTML')
+    ]

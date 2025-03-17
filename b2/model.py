@@ -3,10 +3,11 @@ from typing import List, Optional
 
 
 class Msg:
-    def __init__(self, recipient_id, text, markup=None):
+    def __init__(self, recipient_id, text, markup=None, parse_mode=None):
         self.recipient_id = recipient_id
         self.text = text
         self.markup = markup
+        self.parse_mode = parse_mode
 
 class Debt:
     def __init__(self, creditor_id: int, debtor_id: int, amount: int, expid: int, name: str):
@@ -16,6 +17,9 @@ class Debt:
         self.expid = expid
         self.name = name
 
+    def __str__(self):
+        return f"creditor_id: {self.creditor_id} debt: {self.debtor_id}"
+
 
 class Expense:
     def __init__(self, id: int, amount: int, name: str, creditor_id: int, debtor_ids: List[int], paid_ids=[]):
@@ -24,7 +28,6 @@ class Expense:
         self.name = name
         self.creditor_id = creditor_id
         self.debtor_ids = set(debtor_ids)
-        print("paid_ids", paid_ids)
         self.paid_ids = set(paid_ids)
 
     def __str__(self):
@@ -100,7 +103,9 @@ class Group:
         for usr in self.users:
             if usr.chat_id == userid:
                 return usr
-        return 'None ' + str(userid)
+
+        print("не найден ", userid, self.users)
+        return None
 
     def find_user_by_name(self, username):
         for usr in self.users:

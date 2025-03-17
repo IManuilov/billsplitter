@@ -9,7 +9,7 @@ from telebot.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButt
 from Config import config
 from b2.model import User, Msg, Expense, Group, Debt
 from b2.b2controller import add_user_to_group, add_expense, get_groupid_by_userid, get_group_by_userid, start_group, \
-    get_group_by_id, add_payment
+    get_group_by_id, add_payment, grp_report, get_status
 from table import prep
 from utils import strmoney
 
@@ -39,7 +39,7 @@ def send_all(msgs: List[Msg]):
     for msg in msgs:
         print('sendmsg:', msg.recipient_id, msg.text)
         if msg.recipient_id > 1000 or msg.recipient_id < -1000:
-            bot.send_message(msg.recipient_id, msg.text, reply_markup=msg.markup)
+            bot.send_message(msg.recipient_id, msg.text, reply_markup=msg.markup, parse_mode=msg.parse_mode)
 
 
 # add user #
@@ -137,7 +137,7 @@ def expense_name_callback(message, data):
 
 
 def add_sum_callback(message, data):
-    data['amount'] = int(message.text)
+    data['amount'] = int(message.text.replace('/', ''))
 
     msg = bot.send_message(message.chat.id, 'Наименование:')
     bot.register_next_step_handler(msg, expense_name_callback, data)
@@ -146,19 +146,24 @@ def add_sum_callback(message, data):
 @bot.message_handler(commands=['add'])
 def add_exp(message):
     chat_id = message.chat.id
+    if chat_id < 0:
+        bot.send_message(message.chat.id, 'Команда доступна только в индивидуальном чате')
+        return
 
-    group = get_group_by_userid(chat_id)
+    group = get_group_by_id(chat_id)
 
-    data = {}
-    data['creditor_id'] = chat_id
-    data['debtor_names'] = []
-    data['all_users'] = [usr.name for usr in group.users]
-    data['group_id'] = group.chat_id
+    data = {
+        'creditor_id': chat_id,
+        'debtor_names': [],
+        'all_users': [usr.name for usr in group.users],
+        'group_id': group.chat_id,
+    }
 
     msg = bot.send_message(message.chat.id, 'Сумма')
     bot.register_next_step_handler(msg, add_sum_callback, data)
 
 
+# Показать все операции
 @bot.message_handler(commands=['all'])
 def show_group_status_all(message):
     chat_id = message.chat.id
@@ -171,6 +176,7 @@ def show_group_status_all(message):
 
     bot.send_message(message.chat.id, txt, parse_mode='HTML')
 
+# Показать актуальные долги
 @bot.message_handler(commands=['depts'])
 def show_group_status_short(message):
     chat_id = message.chat.id
@@ -183,48 +189,21 @@ def show_group_status_short(message):
 
     bot.send_message(message.chat.id, txt, parse_mode='HTML')
 
-def grp_report(group: Group, full: bool):
-    txt = ''
-    for ex in group.expenses:
-        txt += f"<B>{group.find_user_by_id(ex.creditor_id).name} заплатил {strmoney(ex.amount)} за '{ex.name}'</B>\n"
-        one_amount = strmoney(ex.get_for_one_amount())
-        for usr in group.ids_to_users(ex.debtor_ids):
-            ok = usr.chat_id in ex.paid_ids or usr.chat_id == ex.creditor_id
-            if full or not ok:
-                ok_in = '<s>' if ok else ''
-                ok_out = '</s>' if ok else ''
-                txt += ok_in + one_amount + '\t' + usr.name + ok_out + '\n'
-        txt += '\n'
 
-    if len(txt) == 0:
-        txt = 'Нет расходов'
-    return txt
-
+# поазать твои долги
 @bot.message_handler(commands=['status'])
 def show_status(message):
     chat_id = message.chat.id
+    print("chat_id", chat_id)
     if chat_id < 0:
         return
 
     group = get_group_by_userid(chat_id)
 
-    my_creds = group.get_debts(filter_creditor_id=chat_id)
+    msgs = get_status(chat_id, group, message)
+    send_all(msgs)
 
-    table = '\n'.join([f"{strmoney(t.amount)} {group.find_user_by_id(t.debtor_id).name} за {t.name}" for t in my_creds])
 
-    txt = f'<B>Тебе должны {strmoney(sum([debt.amount for debt in my_creds]))}</B>\n{table}'
-    bot.send_message(message.chat.id, txt, parse_mode='HTML')
-
-    #, parse_mode='MarkdownV2'
-
-    my_debts = group.get_debts(filter_debtor_id=chat_id)
-
-    txt = ""
-    for debt in my_debts:
-        txt += strmoney(debt.amount) + ' ' + group.find_user_by_id(debt.creditor_id).name + '\n'
-
-    txt = '<B>Ты должен ' + (strmoney(sum([debt.amount for debt in my_debts]))) + '</B>\n' + txt
-    bot.send_message(message.chat.id, txt, parse_mode='HTML')#, parse_mode='MarkdownV2'
 
 
 def select_exp_callback(message, data):
